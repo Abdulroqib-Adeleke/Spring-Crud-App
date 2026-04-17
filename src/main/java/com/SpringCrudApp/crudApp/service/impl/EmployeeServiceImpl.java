@@ -1,4 +1,4 @@
-package com.SpringCrudApp.crudApp.impl;
+package com.SpringCrudApp.crudApp.controller.impl;
 
 import org.springframework.stereotype.Service;
 
