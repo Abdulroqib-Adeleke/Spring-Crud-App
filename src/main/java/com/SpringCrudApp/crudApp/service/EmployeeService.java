@@ -16,9 +16,9 @@ public interface EmployeeService {
 
     EmployeeResponseDto create(@Valid EmployeeRequestDto dto);
 
-    EmployeeResponseDto findById(Long id);
-
     Page<EmployeeResponseDto> findAll(Pageable pageable, String department, Boolean active);
+
+    EmployeeResponseDto findById(Long id);
 
     EmployeeResponseDto update(Long id, EmployeeRequestDto dto);
 

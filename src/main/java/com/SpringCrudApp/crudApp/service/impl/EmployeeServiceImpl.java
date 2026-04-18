@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Validated
@@ -32,6 +33,9 @@ import java.util.List;
 @Transactional
 public class EmployeeServiceImpl implements EmployeeService {
 
+    private  static final Set<String> INTERN_DEPARTMENTS = Set.of(
+            "PROGRAMMING", "HR", "MARKETING", "TESTING", "CUSTOMER SERVICE"
+    );
     private static final BigDecimal SALARY_DEFAULT_FLOOR = new BigDecimal("30000.00");
     private static final BigDecimal SALARY_INTERN_FLOOR = new BigDecimal("15000.00");
 
@@ -40,17 +44,16 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeResponseDto create(@Valid EmployeeRequestDto dto){
+        checkEmail(dto.getEmail(), null);
+        validateSalary(dto.getDepartment(), dto.getSalary());
+        Employee saved = repo.save(mapToEmployee(dto));
 
-        return null;
+        return mapToDto(saved);
 
     }
 
     @Override
-    public EmployeeResponseDto findById(Long id) {
-        return null;
-    }
-
-    @Override
+    @Transactional
     public Page<EmployeeResponseDto> findAll(Pageable pageable, String department, Boolean active) {
 
         log.debug("Fetching all employee");
@@ -66,6 +69,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         return new PageImpl<>(page, pageable, dtoResponse.size());
 
+    }
+
+    @Override
+    public EmployeeResponseDto findById(Long id) {
+
+        return null;
     }
 
     @Override
@@ -96,6 +105,32 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public ImportResultDto importFromExcel(MultipartFile file) {
         return null;
+    }
+
+    private void checkEmail(String email, Long excludedId) {
+        repo.findByEmail(email).ifPresent(existing -> {
+            if (!existing.getId().equals(excludedId)) {
+                throw new DuplicateEmailException(email);
+            }
+        });
+    }
+
+    private void validateSalary(String department, BigDecimal salary){
+
+        if(department == null || salary == null){
+
+        }
+        boolean acceptsInterns = INTERN_DEPARTMENTS.contains(department.toUpperCase());
+
+        BigDecimal floorSalary = acceptsInterns
+                ? SALARY_INTERN_FLOOR
+                : SALARY_DEFAULT_FLOOR;
+
+        assert salary != null;
+        if(salary.compareTo(floorSalary) < 0){
+            throw new IllegalArgumentException(
+                    "Minimum salary for department " + department + " is " + floorSalary);
+        }
     }
 
     private Employee mapToEmployee(EmployeeRequestDto dto) {
