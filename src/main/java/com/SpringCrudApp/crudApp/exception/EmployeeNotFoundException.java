@@ -10,4 +10,8 @@ public class EmployeeNotFoundException extends RuntimeException{
         super(message);
     }
 
+    public EmployeeNotFoundException(Long id) {
+        super("Employee not found with id: " + id);
+    }
+
 }

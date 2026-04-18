@@ -5,6 +5,7 @@ import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
 import com.SpringCrudApp.crudApp.dto.ImportResultDto;
 import com.SpringCrudApp.crudApp.dto.PartialUpdateDto;
 import com.SpringCrudApp.crudApp.exception.DuplicateEmailException;
+import com.SpringCrudApp.crudApp.exception.EmployeeNotFoundException;
 import com.SpringCrudApp.crudApp.model.Employee;
 import com.SpringCrudApp.crudApp.repository.EmployeeRepository;
 import com.SpringCrudApp.crudApp.service.EmployeeService;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Validated
@@ -74,36 +76,85 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeResponseDto findById(Long id) {
 
-        return null;
+        return mapToDto(fetchId(id));
     }
 
     @Override
     public EmployeeResponseDto update(Long id, EmployeeRequestDto dto) {
-        return null;
+
+        Employee exists = fetchId(id);
+        checkEmail(dto.getEmail(), id);
+        validateSalary(dto.getDepartment(), dto.getSalary());
+
+        exists.setFirstName(dto.getFirstName());
+        exists.setLastName(dto.getLastName());
+        exists.setEmail(dto.getEmail());
+        exists.setDepartment(dto.getDepartment());
+        exists.setSalary(dto.getSalary());
+        exists.setActive(dto.getActive());
+
+        return mapToDto(repo.save(exists));
+
     }
 
     @Override
-    public EmployeeResponseDto partialUpdate(Long id, PartialUpdateDto dto) {
-        return null;
+    public EmployeeResponseDto partialUpdate(Long id, @Valid PartialUpdateDto dto) {
+
+        Employee exists = fetchId(id);
+
+        if (dto.getSalary() != null) {
+            validateSalary(
+                    dto.getDepartment() != null ? dto.getDepartment() : exists.getDepartment(),
+                    dto.getSalary()
+            );
+            exists.setSalary(dto.getSalary());
+        }
+        if (dto.getDepartment() != null) {
+            validateSalary(dto.getDepartment(), exists.getSalary());
+            exists.setDepartment(dto.getDepartment());
+        }
+        if (dto.getActive() != null) {
+            exists.setActive(dto.getActive());
+        }
+
+        return mapToDto(repo.save(exists));
     }
 
     @Override
     public void softDelete(Long id) {
+
+        Employee exists = fetchId(id);
+        exists.setActive(false);
+        repo.save(exists);
 
     }
 
     @Override
     public void hardDelete(Long id) {
 
+        Employee exists = fetchId(id);
+
+        if (exists.getActive().equals(Boolean.TRUE)) {
+            throw new IllegalArgumentException(
+                    "Cannot hard-delete an active employee (id= " + id + "). Soft-delete employee first");
+        }
+        repo.deleteById(id);
+
     }
 
     @Override
     public List<EmployeeResponseDto> findBySalaryRange(BigDecimal min, BigDecimal max) {
-        return List.of();
+
+        return repo.findBySalaryRange(min, max)
+                .stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional
     public ImportResultDto importFromExcel(MultipartFile file) {
+
         return null;
     }
 
@@ -158,6 +209,11 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
+    }
+
+    private Employee fetchId(Long id){
+        return repo.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException(id));
     }
 
 }
