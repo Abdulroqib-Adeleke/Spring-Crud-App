@@ -41,6 +41,7 @@ public class EmployeeRequestDto {
     private LocalDate dateOfJoining;
 
     @NotNull
-    private boolean active;
+    private Boolean active;
+
 
 }

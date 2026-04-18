@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,11 +19,12 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Employee {
 
     @Id
     @GeneratedValue
-    private long id;
+    private Long id;
 
     @NotBlank
     @Size(max=50)
@@ -50,7 +52,7 @@ public class Employee {
     private LocalDate dateOfJoining;
 
     @NotNull
-    private boolean active;
+    private Boolean active;
 
     @Column(updatable=false)
     private LocalDateTime createdAt;
