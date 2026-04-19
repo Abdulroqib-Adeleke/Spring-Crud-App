@@ -48,4 +48,11 @@ public class EmployeeController {
 
         return ResponseEntity.ok(service.findById(id));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EmployeeResponseDto> update(
+            @PathVariable Long id, @Valid @RequestBody EmployeeRequestDto dto){
+
+        return ResponseEntity.ok(service.update(id, dto));
+    }
 }
