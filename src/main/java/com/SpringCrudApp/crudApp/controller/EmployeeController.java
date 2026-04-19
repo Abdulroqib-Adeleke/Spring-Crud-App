@@ -6,6 +6,7 @@ import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
 import com.SpringCrudApp.crudApp.service.EmployeeService;
 import com.SpringCrudApp.crudApp.service.impl.EmployeeServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +15,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/employees")
@@ -32,7 +36,7 @@ public class EmployeeController {
     }
 
     @GetMapping
-    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<EmployeeResponseDto> getAllEmployee(
             @RequestParam(defaultValue = "0")  int     page,
             @RequestParam(defaultValue = "10") int     size,
@@ -45,12 +49,14 @@ public class EmployeeController {
     }
 
     @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<EmployeeResponseDto> findById(@PathVariable Long id){
 
         return ResponseEntity.ok(service.findById(id));
     }
 
     @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<EmployeeResponseDto> update(
             @PathVariable Long id, @Valid @RequestBody EmployeeRequestDto dto){
 
@@ -58,9 +64,38 @@ public class EmployeeController {
     }
 
     @PatchMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<EmployeeResponseDto> partialUpdate(
             @PathVariable Long id, @Valid @RequestBody EmployeePartialUpdateDto dto){
 
         return ResponseEntity.ok(service.partialUpdate(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<Void> softDelete(@PathVariable Long id){
+
+        service.softDelete(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/hard")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<Void> hardDelete(@PathVariable Long id){
+
+        service.hardDelete(id);
+
+        return ResponseEntity.noContent().build();
+
+    }
+
+    @GetMapping("/salary-range")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<List<EmployeeResponseDto>> salaryRange(
+            @Parameter(description = "Minimum salary") @RequestParam BigDecimal min,
+            @Parameter(description = "Maximum salary") @RequestParam BigDecimal max){
+
+        return ResponseEntity.ok(service.findBySalaryRange(min, max));
     }
 }
