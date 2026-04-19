@@ -37,6 +37,10 @@ public class EmployeeRequestDto {
     private BigDecimal salary;
 
     @NotNull
+    @PastOrPresent
+    private LocalDate dateOfJoining;
+
+    @NotNull
     private Boolean active;
 
 
