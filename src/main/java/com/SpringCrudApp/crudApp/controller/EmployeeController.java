@@ -7,6 +7,9 @@ import com.SpringCrudApp.crudApp.service.impl.EmployeeServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +32,14 @@ public class EmployeeController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ResponseEntity<EmployeeResponseDto> getAllEmployee(){
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<EmployeeResponseDto> getAllEmployee(
+            @RequestParam(defaultValue = "0")  int     page,
+            @RequestParam(defaultValue = "10") int     size,
+            @RequestParam(defaultValue = "id") String  sort,
+            @RequestParam(required = false)    String  department,
+            @RequestParam(required = false)    Boolean active){
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+        return ResponseEntity.ok((EmployeeResponseDto) service.findAll(pageable, department, active));
     }
 }
