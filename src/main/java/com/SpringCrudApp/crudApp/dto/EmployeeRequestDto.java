@@ -36,12 +36,5 @@ public class EmployeeRequestDto {
     @DecimalMin("0.00")
     private BigDecimal salary;
 
-    @NotNull
-    @PastOrPresent
-    private LocalDate dateOfJoining;
-
-    @NotNull
-    private Boolean active;
-
 
 }

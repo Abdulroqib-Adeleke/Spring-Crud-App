@@ -42,4 +42,10 @@ public class EmployeeController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
         return ResponseEntity.ok((EmployeeResponseDto) service.findAll(pageable, department, active));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<EmployeeResponseDto> findById(@PathVariable Long id){
+
+        return ResponseEntity.ok(service.findById(id));
+    }
 }
