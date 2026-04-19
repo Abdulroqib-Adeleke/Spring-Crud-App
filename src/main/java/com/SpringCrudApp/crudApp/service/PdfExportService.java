@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PdfExportService {
 
-    private static final String COMPANY_NAME  = "Acme Corporation";
+    private static final String COMPANY_NAME  = "Adeleke Corporation";
     private static final String REPORT_TITLE  = "Employee Report";
     private static final DateTimeFormatter DT  = DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm");
 

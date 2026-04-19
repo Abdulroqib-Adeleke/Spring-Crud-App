@@ -38,7 +38,7 @@ public class EmployeeRequestDto {
 
     @NotNull
     @PastOrPresent
-    private LocalDate dateOfJoining;
+    private LocalDate dateOfJoining = LocalDate.now();
 
     @NotNull
     private Boolean active;
