@@ -24,7 +24,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(EmployeeNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleEmployeeNotFoundException(EmployeeNotFoundException notFoundException, WebRequest request){
+    public ResponseEntity<Map<String, Object>> handleEmployeeNotFoundException(EmployeeNotFoundException notFoundException,
+                                                                               WebRequest request){
         log.error("Resource Not Found: {}", notFoundException.getMessage());
 
         Map<String, Object> errorBody = builderErrorBody(
@@ -33,6 +34,23 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody);
     }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateEmailException(DuplicateEmailException duplicateEmail,
+                                                                             WebRequest request){
+
+        log.error("Email already exists: {}", duplicateEmail.getMessage());
+
+        Map<String, Object> errorbody = builderErrorBody(
+                HttpStatus.CONFLICT.value(), "Email aleady exists",
+                duplicateEmail.getMessage(), request.getDescription(false)
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorbody);
+
+    }
+
+    //@ExceptionHandler()
 
     private Map<String, Object> builderErrorBody(int status, String error,
                                                  String message, String path)
