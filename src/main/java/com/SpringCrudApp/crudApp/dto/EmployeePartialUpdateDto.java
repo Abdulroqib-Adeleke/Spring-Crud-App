@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PartialUpdateDto {
+public class EmployeePartialUpdateDto {
 
     @NotBlank
     @Size(max = 100)

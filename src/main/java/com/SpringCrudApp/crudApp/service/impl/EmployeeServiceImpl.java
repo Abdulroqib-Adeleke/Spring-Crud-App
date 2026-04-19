@@ -3,7 +3,7 @@ package com.SpringCrudApp.crudApp.service.impl;
 import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
 import com.SpringCrudApp.crudApp.dto.ImportResultDto;
-import com.SpringCrudApp.crudApp.dto.PartialUpdateDto;
+import com.SpringCrudApp.crudApp.dto.EmployeePartialUpdateDto;
 import com.SpringCrudApp.crudApp.exception.DuplicateEmailException;
 import com.SpringCrudApp.crudApp.exception.EmployeeNotFoundException;
 import com.SpringCrudApp.crudApp.model.Employee;
@@ -17,14 +17,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.Validator;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -98,7 +97,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public EmployeeResponseDto partialUpdate(Long id, @Valid PartialUpdateDto dto) {
+    public EmployeeResponseDto partialUpdate(Long id, @Valid EmployeePartialUpdateDto dto) {
 
         Employee exists = fetchId(id);
 
@@ -171,7 +170,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         if(department == null || salary == null){
 
         }
-        boolean acceptsInterns = INTERN_DEPARTMENTS.contains(department.toUpperCase());
+        boolean acceptsInterns = INTERN_DEPARTMENTS.contains(
+                Objects.requireNonNull(department).toUpperCase());
 
         BigDecimal floorSalary = acceptsInterns
                 ? SALARY_INTERN_FLOOR
@@ -191,7 +191,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .email(dto.getEmail())
                 .department(dto.getDepartment())
                 .salary(dto.getSalary())
-                .dateOfJoining(dto.getDateOfJoining())
                 .active(dto.getActive() != null ? dto.getActive() : true)
                 .build();
     }

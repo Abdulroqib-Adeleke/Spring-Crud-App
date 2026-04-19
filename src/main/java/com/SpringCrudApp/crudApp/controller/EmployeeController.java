@@ -1,5 +1,6 @@
 package com.SpringCrudApp.crudApp.controller;
 
+import com.SpringCrudApp.crudApp.dto.EmployeePartialUpdateDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
 import com.SpringCrudApp.crudApp.service.EmployeeService;
@@ -54,5 +55,12 @@ public class EmployeeController {
             @PathVariable Long id, @Valid @RequestBody EmployeeRequestDto dto){
 
         return ResponseEntity.ok(service.update(id, dto));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<EmployeeResponseDto> partialUpdate(
+            @PathVariable Long id, @Valid @RequestBody EmployeePartialUpdateDto dto){
+
+        return ResponseEntity.ok(service.partialUpdate(id, dto));
     }
 }

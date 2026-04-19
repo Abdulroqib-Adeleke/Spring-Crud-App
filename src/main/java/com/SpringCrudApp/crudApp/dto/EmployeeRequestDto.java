@@ -36,5 +36,8 @@ public class EmployeeRequestDto {
     @DecimalMin("0.00")
     private BigDecimal salary;
 
+    @NotNull
+    private Boolean active;
+
 
 }

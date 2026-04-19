@@ -3,7 +3,7 @@ package com.SpringCrudApp.crudApp.service;
 import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
 import com.SpringCrudApp.crudApp.dto.ImportResultDto;
-import com.SpringCrudApp.crudApp.dto.PartialUpdateDto;
+import com.SpringCrudApp.crudApp.dto.EmployeePartialUpdateDto;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +22,7 @@ public interface EmployeeService {
 
     EmployeeResponseDto update(Long id, EmployeeRequestDto dto);
 
-    EmployeeResponseDto partialUpdate(Long id, @Valid PartialUpdateDto dto);
+    EmployeeResponseDto partialUpdate(Long id, @Valid EmployeePartialUpdateDto dto);
 
     void softDelete(Long id);
 
