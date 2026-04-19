@@ -3,10 +3,14 @@ package com.SpringCrudApp.crudApp.controller;
 import com.SpringCrudApp.crudApp.dto.EmployeePartialUpdateDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
+import com.SpringCrudApp.crudApp.dto.ImportResultDto;
 import com.SpringCrudApp.crudApp.service.EmployeeService;
+import com.SpringCrudApp.crudApp.service.ExcelExportService;
+import com.SpringCrudApp.crudApp.service.PdfExportService;
 import com.SpringCrudApp.crudApp.service.impl.EmployeeServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,6 +30,8 @@ import java.util.List;
 public class EmployeeController {
 
     private final EmployeeService service;
+    private final ExcelExportService excelExportService;
+    private  final PdfExportService pdfExportService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -97,5 +104,27 @@ public class EmployeeController {
             @Parameter(description = "Maximum salary") @RequestParam BigDecimal max){
 
         return ResponseEntity.ok(service.findBySalaryRange(min, max));
+    }
+
+    @PostMapping(value = "/import", consumes = "multipart/form-data")
+    @Operation(summary = "Import employees from .xlsx file")
+    public ResponseEntity<ImportResultDto> importFromExcel(
+            @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(service.importFromExcel(file));
+    }
+
+    @GetMapping("/export/excel")
+    @Operation(summary = "Download employee data as Excel (.xlsx)")
+    public void exportToExcel(
+            HttpServletResponse response,
+            @RequestParam(required = false) String  department) {
+        excelExportService.export(response, department);
+    }
+
+    @GetMapping("/export/pdf")
+    @Operation(summary = "Download employee report as PDF")
+    public void exportToPdf(HttpServletResponse response) {
+
+        pdfExportService.export(response);
     }
 }
