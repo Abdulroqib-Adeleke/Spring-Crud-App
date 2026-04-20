@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -49,6 +50,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository repo;
     private final Validator validator;
+
+    private final DataFormatter dataFormatter = new DataFormatter();
 
     @Override
     public EmployeeResponseDto create(@Valid EmployeeRequestDto dto){
@@ -157,65 +160,39 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    @Transactional
     public ImportResultDto importFromExcel(MultipartFile file) {
-
         validateXlsxFile(file);
-
-        List<String> errors  = new ArrayList<>();
-        int successCount     = 0;
-        int failureCount     = 0;
+        List<String> errors = new ArrayList<>();
+        int successCount = 0;
 
         try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Row 0 is the header – start from row 1
             for (int rowIdx = 1; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
                 Row row = sheet.getRow(rowIdx);
                 if (row == null) continue;
 
                 List<String> rowErrors = new ArrayList<>();
-                EmployeeRequestDto dto = parseRow(row, rowIdx, rowErrors);
+                // 1. Just map, don't validate or check DB here
+                EmployeeRequestDto dto = mapRowToDto(row, rowErrors);
 
                 if (rowErrors.isEmpty()) {
-                    // Bean Validation
-                    Set<ConstraintViolation<EmployeeRequestDto>> violations =
-                            validator.validate(dto);
-                    if (!violations.isEmpty()) {
-                        int finalRowIdx = rowIdx;
-                        violations.forEach(v ->
-                                rowErrors.add("Row " + (finalRowIdx + 1) + ": "
-                                        + v.getPropertyPath() + " – " + v.getMessage()));
-                    }
-                }
-
-                if (rowErrors.isEmpty()) {
+                    // 2. Process individually so one failure doesn't kill the whole job
                     try {
-                        checkEmail(dto.getEmail(), null);
-                        validateSalary(dto.getDepartment(), dto.getSalary());
-                        repo.save(mapToEmployee(dto));
+                        processRow(dto);
                         successCount++;
-                    } catch (DuplicateEmailException | IllegalArgumentException biz) {
-                        rowErrors.add("Row " + (rowIdx + 1) + ": " + biz.getMessage());
+                    } catch (Exception e) {
+                        rowErrors.add("Row " + (rowIdx + 1) + ": " + e.getMessage());
                     }
                 }
-
-                if (!rowErrors.isEmpty()) {
-                    errors.addAll(rowErrors);
-                    failureCount++;
-                }
+                errors.addAll(rowErrors);
             }
-
-        } catch (IOException ex) {
-            throw new ExcelProcessingException("Failed to read uploaded workbook", ex);
+        } catch (IOException e) {
+            throw new ExcelProcessingException("File error", e);
         }
-
-        return ImportResultDto.builder()
-                .successCount(successCount)
-                .failureCount(failureCount)
-                .errors(errors)
-                .build();
+        return new ImportResultDto(successCount, errors.size(), errors);
     }
+
 
     private void checkEmail(String email, Long excludedId) {
         repo.findByEmail(email).ifPresent(existing -> {
@@ -288,40 +265,50 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
     }
 
-    private EmployeeRequestDto parseRow(Row row, int rowIdx, List<String> rowErrors) {
+    private EmployeeRequestDto mapRowToDto(Row row, List<String> rowErrors) {
         EmployeeRequestDto dto = new EmployeeRequestDto();
-        int humanRow = rowIdx + 1;
+        int rowNum = row.getRowNum() + 1;
 
-        dto.setFirstName(getCellString(row, 0));
-        dto.setLastName(getCellString(row, 1));
-        dto.setEmail(getCellString(row, 2));
-        dto.setDepartment(getCellString(row, 3));
+        // 1. Basic Fields
+        dto.setFirstName(dataFormatter.formatCellValue(row.getCell(1)).trim());
+        dto.setLastName(dataFormatter.formatCellValue(row.getCell(2)).trim());
+        dto.setEmail(dataFormatter.formatCellValue(row.getCell(3)).trim());
+        dto.setDepartment(dataFormatter.formatCellValue(row.getCell(4)).trim());
 
-
+        // 2. Salary Handling
         try {
-            String salaryStr = getCellString(row, 4);
-            dto.setSalary(new BigDecimal(salaryStr.isBlank() ? "0" : salaryStr));
+            String salaryStr = dataFormatter.formatCellValue(row.getCell(5));
+            dto.setSalary(salaryStr.isBlank() ? BigDecimal.ZERO : new BigDecimal(salaryStr));
         } catch (NumberFormatException e) {
-            rowErrors.add("Row " + humanRow + ": salary – invalid numeric value");
+            rowErrors.add("Row " + rowNum + ": Invalid salary format");
         }
 
-
-        Cell dateCell = row.getCell(5);
+        // 3. Date of Joining Handling
+        // Replace the date handling block in mapRowToDto with this:
+        Cell dateCell = row.getCell(6);
         if (dateCell != null) {
             try {
-                if (dateCell.getCellType() == CellType.NUMERIC
-                        && DateUtil.isCellDateFormatted(dateCell)) {
+                if (DateUtil.isCellDateFormatted(dateCell)) {
                     dto.setDateOfJoining(dateCell.getLocalDateTimeCellValue().toLocalDate());
                 } else {
-                    dto.setDateOfJoining(LocalDate.parse(getCellString(row, 5)));
+                    String dateStr = dataFormatter.formatCellValue(dateCell).trim();
+                    // Try standard ISO format first
+                    try {
+                        dto.setDateOfJoining(LocalDate.parse(dateStr));
+                    } catch (DateTimeParseException e) {
+                        // Fallback: Add other patterns here if needed (e.g., MM/dd/yyyy)
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+                        dto.setDateOfJoining(LocalDate.parse(dateStr, formatter));
+                    }
                 }
-            } catch (DateTimeParseException e) {
-                rowErrors.add("Row " + humanRow + ": dateOfJoining – expected YYYY-MM-DD");
+            } catch (Exception e) {
+                rowErrors.add("Row " + rowNum + ": Invalid date format '" +
+                        dataFormatter.formatCellValue(dateCell) + "'. Expected YYYY-MM-DD");
             }
         }
 
-
-        String activeStr = getCellString(row, 6);
+        // 4. Active Status
+        String activeStr = dataFormatter.formatCellValue(row.getCell(7));
         dto.setActive(activeStr.isBlank() ? true : Boolean.parseBoolean(activeStr));
 
         return dto;
@@ -334,11 +321,16 @@ public class EmployeeServiceImpl implements EmployeeService {
             case STRING  -> cell.getStringCellValue().trim();
             case NUMERIC -> String.valueOf((long) cell.getNumericCellValue());
             case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
-            case FORMULA -> cell.getCachedFormulaResultType() == CellType.STRING
-                    ? cell.getStringCellValue().trim()
-                    : String.valueOf(cell.getNumericCellValue());
             default      -> "";
         };
+    }
+
+    @Transactional
+    public void processRow(EmployeeRequestDto dto) {
+        // Perform final checks here
+        checkEmail(dto.getEmail(), null);
+        validateSalary(dto.getDepartment(), dto.getSalary());
+        repo.save(mapToEmployee(dto));
     }
 
 }
