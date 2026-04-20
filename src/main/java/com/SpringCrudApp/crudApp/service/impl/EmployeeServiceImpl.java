@@ -173,11 +173,11 @@ public class EmployeeServiceImpl implements EmployeeService {
                 if (row == null) continue;
 
                 List<String> rowErrors = new ArrayList<>();
-                // 1. Just map, don't validate or check DB here
+
                 EmployeeRequestDto dto = mapRowToDto(row, rowErrors);
 
                 if (rowErrors.isEmpty()) {
-                    // 2. Process individually so one failure doesn't kill the whole job
+
                     try {
                         processRow(dto);
                         successCount++;
@@ -204,8 +204,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private void validateSalary(String department, BigDecimal salary){
 
-        if(department == null || salary == null){
-
+        if (department == null || department.isBlank()) {
+            throw new IllegalArgumentException("Department is required");
+        }
+        if (salary == null) {
+            throw new IllegalArgumentException("Salary is required");
         }
         boolean acceptsInterns = INTERN_DEPARTMENTS.contains(
                 Objects.requireNonNull(department).toUpperCase());
@@ -269,13 +272,17 @@ public class EmployeeServiceImpl implements EmployeeService {
         EmployeeRequestDto dto = new EmployeeRequestDto();
         int rowNum = row.getRowNum() + 1;
 
-        // 1. Basic Fields
+
+
+
         dto.setFirstName(dataFormatter.formatCellValue(row.getCell(1)).trim());
         dto.setLastName(dataFormatter.formatCellValue(row.getCell(2)).trim());
         dto.setEmail(dataFormatter.formatCellValue(row.getCell(3)).trim());
         dto.setDepartment(dataFormatter.formatCellValue(row.getCell(4)).trim());
+        String deptRaw = dataFormatter.formatCellValue(row.getCell(4));
+        log.info("Processing Row {}: Detected Department as '{}'", rowNum, deptRaw);
 
-        // 2. Salary Handling
+
         try {
             String salaryStr = dataFormatter.formatCellValue(row.getCell(5));
             dto.setSalary(salaryStr.isBlank() ? BigDecimal.ZERO : new BigDecimal(salaryStr));
@@ -283,8 +290,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             rowErrors.add("Row " + rowNum + ": Invalid salary format");
         }
 
-        // 3. Date of Joining Handling
-        // Replace the date handling block in mapRowToDto with this:
+
         Cell dateCell = row.getCell(6);
         if (dateCell != null) {
             try {
@@ -292,11 +298,11 @@ public class EmployeeServiceImpl implements EmployeeService {
                     dto.setDateOfJoining(dateCell.getLocalDateTimeCellValue().toLocalDate());
                 } else {
                     String dateStr = dataFormatter.formatCellValue(dateCell).trim();
-                    // Try standard ISO format first
+
                     try {
                         dto.setDateOfJoining(LocalDate.parse(dateStr));
                     } catch (DateTimeParseException e) {
-                        // Fallback: Add other patterns here if needed (e.g., MM/dd/yyyy)
+
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
                         dto.setDateOfJoining(LocalDate.parse(dateStr, formatter));
                     }
@@ -307,7 +313,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             }
         }
 
-        // 4. Active Status
+
         String activeStr = dataFormatter.formatCellValue(row.getCell(7));
         dto.setActive(activeStr.isBlank() ? true : Boolean.parseBoolean(activeStr));
 
@@ -327,7 +333,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Transactional
     public void processRow(EmployeeRequestDto dto) {
-        // Perform final checks here
+
         checkEmail(dto.getEmail(), null);
         validateSalary(dto.getDepartment(), dto.getSalary());
         repo.save(mapToEmployee(dto));
