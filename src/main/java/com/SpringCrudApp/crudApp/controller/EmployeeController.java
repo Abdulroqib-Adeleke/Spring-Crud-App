@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -44,7 +45,7 @@ public class EmployeeController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<EmployeeResponseDto> getAllEmployee(
+    public Page<EmployeeResponseDto> getAllEmployee(
             @RequestParam(defaultValue = "0")  int     page,
             @RequestParam(defaultValue = "10") int     size,
             @RequestParam(defaultValue = "id") String  sort,
@@ -52,7 +53,7 @@ public class EmployeeController {
             @RequestParam(required = false)    Boolean active){
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
-        return ResponseEntity.ok((EmployeeResponseDto) service.findAll(pageable, department, active));
+        return service.findAll(pageable, department, active);
     }
 
     @GetMapping("/{id}")

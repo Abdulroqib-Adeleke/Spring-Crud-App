@@ -64,18 +64,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Transactional
     public Page<EmployeeResponseDto> findAll(Pageable pageable, String department, Boolean active) {
 
-        log.debug("Fetching all employee");
 
-        List<Employee> employees = repo.findAll();
-        List<EmployeeResponseDto> dtoResponse = employees.stream().map(this::mapToDto).toList();
+        Page<Employee> employeePage = repo.findAll(pageable);
+        List<EmployeeResponseDto> dtoResponse = employeePage.stream()
+                .map(this::mapToDto)
+                .toList();
 
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), dtoResponse.size());
-        List<EmployeeResponseDto> page = start >
-                dtoResponse.size() ? Collections.emptyList() :
-                dtoResponse.subList(start,end);
-
-        return new PageImpl<>(page, pageable, dtoResponse.size());
+        return new PageImpl<>(dtoResponse, pageable, employeePage.getTotalElements());
 
     }
 
