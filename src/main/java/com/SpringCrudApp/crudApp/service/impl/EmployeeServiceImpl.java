@@ -98,6 +98,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         exists.setDepartment(dto.getDepartment());
         exists.setSalary(dto.getSalary());
         exists.setActive(dto.getActive());
+        exists.setUpdatedAt(LocalDateTime.now());
 
         return mapToDto(repo.save(exists));
 
@@ -108,20 +109,23 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee exists = fetchId(id);
 
-        if (dto.getSalary() != null) {
-            validateSalary(
-                    dto.getDepartment() != null ? dto.getDepartment() : exists.getDepartment(),
-                    dto.getSalary()
-            );
+        BigDecimal newSalary = (dto.getSalary() != null) ? dto.getSalary() : exists.getSalary();
+        String newDepartment = (dto.getDepartment() != null) ? dto.getDepartment() : exists.getDepartment();
+
+        if (dto.getSalary() != null || dto.getDepartment() != null) {
+            validateSalary(newDepartment, newSalary);
+        }
+        if(dto.getSalary() != null){
             exists.setSalary(dto.getSalary());
         }
         if (dto.getDepartment() != null) {
-            validateSalary(dto.getDepartment(), exists.getSalary());
             exists.setDepartment(dto.getDepartment());
         }
         if (dto.getActive() != null) {
             exists.setActive(dto.getActive());
         }
+
+        exists.setUpdatedAt(LocalDateTime.now());
 
         return mapToDto(repo.save(exists));
     }
@@ -255,7 +259,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .active(dto.getActive() != null ? dto.getActive() : true)
                 .dateOfJoining(LocalDate.now())
                 .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
     }
 

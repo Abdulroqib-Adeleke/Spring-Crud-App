@@ -41,20 +41,61 @@ public class GlobalExceptionHandler {
 
         log.error("Email already exists: {}", duplicateEmail.getMessage());
 
-        Map<String, Object> errorbody = builderErrorBody(
-                HttpStatus.CONFLICT.value(), "Email aleady exists",
+        Map<String, Object> errorBody = builderErrorBody(
+                HttpStatus.CONFLICT.value(), "Email already exists",
                 duplicateEmail.getMessage(), request.getDescription(false)
         );
 
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorbody);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody);
 
     }
 
-    //@ExceptionHandler()
+    @ExceptionHandler(ExcelProcessingException.class)
+    public ResponseEntity<Map<String, Object>> handleExcelProcessingException(
+            ExcelProcessingException processingException, WebRequest request){
+
+        log.error("Excel encountered an error while processing: {}", processingException.getMessage());
+
+        Map<String, Object> errorBody = builderErrorBody(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(), "Excel encountered an error while processing",
+                processingException.getMessage(), request.getDescription(false));
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorBody);
+
+    }
+
+    @ExceptionHandler(InvalidFileFormatException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidFileFormatException(
+            InvalidFileFormatException invalidFileFormatException, WebRequest request){
+        log.error("Invalid file format, accepts only .xlsx file: {}", invalidFileFormatException.getMessage());
+
+        Map<String , Object> errorBody = builderErrorBody(HttpStatus.BAD_REQUEST.value(), "Invalid file format, accepts only .xlsx file",
+                invalidFileFormatException.getMessage(), request.getDescription(false));
+
+        return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody);
+
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGenericException(
+            Exception ex,
+            WebRequest request) {
+
+        log.error("Unexpected error: ", ex);
+
+        Map<String, Object> errorBody = builderErrorBody(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                "An unexpected error occurred. Please try again later.",
+                request.getDescription(false)
+        );
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorBody);
+    }
+
 
     private Map<String, Object> builderErrorBody(int status, String error,
-                                                 String message, String path)
-    {
+                                                 String message, String path) {
         Map<String, Object> body = new HashMap<>();
         body.put("timeStamp", LocalDateTime.now().toString());
         body.put("status", status);

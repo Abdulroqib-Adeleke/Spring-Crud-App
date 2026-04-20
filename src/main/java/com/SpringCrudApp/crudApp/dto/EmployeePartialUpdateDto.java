@@ -8,19 +8,19 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class EmployeePartialUpdateDto {
 
     @NotBlank
-    @Size(max = 100)
+    @Size(max=100)
     private String department;
 
     @NotNull
-    @DecimalMin("o.oo")
+    @DecimalMin("0.00")
     private BigDecimal salary;
 
     @NotNull
