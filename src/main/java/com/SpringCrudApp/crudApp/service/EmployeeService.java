@@ -4,6 +4,7 @@ import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
 import com.SpringCrudApp.crudApp.dto.ImportResultDto;
 import com.SpringCrudApp.crudApp.dto.EmployeePartialUpdateDto;
+import com.SpringCrudApp.crudApp.model.EmailModel;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,4 +32,6 @@ public interface EmployeeService {
     List<EmployeeResponseDto> findBySalaryRange(BigDecimal min, BigDecimal max);
 
     ImportResultDto importFromExcel(MultipartFile file);
+
+    String sendEmail(EmailModel emailDetails);
 }

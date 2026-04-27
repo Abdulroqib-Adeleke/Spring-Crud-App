@@ -8,9 +8,14 @@ import com.SpringCrudApp.crudApp.exception.DuplicateEmailException;
 import com.SpringCrudApp.crudApp.exception.EmployeeNotFoundException;
 import com.SpringCrudApp.crudApp.exception.ExcelProcessingException;
 import com.SpringCrudApp.crudApp.exception.InvalidFileFormatException;
+import com.SpringCrudApp.crudApp.model.EmailModel;
 import com.SpringCrudApp.crudApp.model.Employee;
 import com.SpringCrudApp.crudApp.repository.EmployeeRepository;
 import com.SpringCrudApp.crudApp.service.EmployeeService;
+import com.SpringCrudApp.crudApp.service.ExcelExportService;
+import com.SpringCrudApp.crudApp.service.PdfExportService;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
@@ -22,6 +27,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
@@ -49,9 +56,12 @@ public class EmployeeServiceImpl implements EmployeeService {
     private static final BigDecimal SALARY_INTERN_FLOOR = new BigDecimal("15000.00");
 
     private final EmployeeRepository repo;
-    private final Validator validator;
+    //private final Validator validator;
 
     private final DataFormatter dataFormatter = new DataFormatter();
+    private final JavaMailSender mailSender;
+    private final ExcelExportService excelExportService;
+    private final PdfExportService pdfExportService;
 
     @Override
     public EmployeeResponseDto create(@Valid EmployeeRequestDto dto){
@@ -193,6 +203,28 @@ public class EmployeeServiceImpl implements EmployeeService {
         return new ImportResultDto(successCount, errors.size(), errors);
     }
 
+    @Override
+    public String sendEmail(EmailModel emailDetails){
+
+        try{
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setFrom(emailDetails.getFrom());
+            helper.setTo(emailDetails.getTo());
+            helper.setSubject(emailDetails.getSubject());
+            helper.setText(emailDetails.getBody(), true);
+            helper.addAttachment(emailDetails.getAttachment()excelExportService.export(HttpServletResponse, String));
+            helper.addAttachment(pdfExportService.export(HttpServletResponse response););
+
+            mailSender.send(message);
+            return "Email sent successfully";
+
+        } catch (Exception e) {
+            return "An error occurred while sending an email: " + e.getMessage();
+        }
+    }
+
 
     private void checkEmail(String email, Long excludedId) {
         repo.findByEmail(email).ifPresent(existing -> {
@@ -271,9 +303,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     private EmployeeRequestDto mapRowToDto(Row row, List<String> rowErrors) {
         EmployeeRequestDto dto = new EmployeeRequestDto();
         int rowNum = row.getRowNum() + 1;
-
-
-
 
         dto.setFirstName(dataFormatter.formatCellValue(row.getCell(1)).trim());
         dto.setLastName(dataFormatter.formatCellValue(row.getCell(2)).trim());
