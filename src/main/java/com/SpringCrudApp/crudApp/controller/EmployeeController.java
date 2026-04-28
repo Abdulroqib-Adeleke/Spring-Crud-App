@@ -4,6 +4,7 @@ import com.SpringCrudApp.crudApp.dto.EmployeePartialUpdateDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
 import com.SpringCrudApp.crudApp.dto.ImportResultDto;
+import com.SpringCrudApp.crudApp.model.EmailModel;
 import com.SpringCrudApp.crudApp.service.EmployeeService;
 import com.SpringCrudApp.crudApp.service.ExcelExportService;
 import com.SpringCrudApp.crudApp.service.PdfExportService;
@@ -127,5 +128,13 @@ public class EmployeeController {
     public void exportToPdf(HttpServletResponse response) {
 
         pdfExportService.export(response);
+    }
+
+    @PostMapping("/sendEmail")
+    @Operation(summary = "Send Email with attachment")
+    public String sendEmail(@ModelAttribute EmailModel emailModel){
+
+        return service.sendEmail(emailModel);
+
     }
 }

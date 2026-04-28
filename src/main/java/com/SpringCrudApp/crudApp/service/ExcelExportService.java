@@ -13,6 +13,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -42,55 +43,7 @@ public class ExcelExportService {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             XSSFSheet sheet = workbook.createSheet("Employees");
 
-            XSSFCellStyle headerStyle  = buildHeaderStyle(workbook);
-            XSSFCellStyle whiteStyle   = buildFillStyle(workbook, IndexedColors.WHITE);
-            XSSFCellStyle blueStyle    = buildFillStyle(workbook,
-                    IndexedColors.LIGHT_TURQUOISE);
-            XSSFCellStyle salaryFormat = buildSalaryStyle(workbook);
-
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < HEADERS.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(HEADERS[i]);
-                cell.setCellStyle(headerStyle);
-            }
-
-            int rowNum = 1;
-            for (Employee emp : employees) {
-                Row row = sheet.createRow(rowNum);
-                XSSFCellStyle rowStyle = (rowNum % 2 == 0) ? blueStyle : whiteStyle;
-
-                createCell(row, 0, emp.getId(),          rowStyle);
-                createCell(row, 1, emp.getFirstName(),   rowStyle);
-                createCell(row, 2, emp.getLastName(),    rowStyle);
-                createCell(row, 3, emp.getEmail(),       rowStyle);
-                createCell(row, 4, emp.getDepartment(),  rowStyle);
-
-                Cell salaryCell = row.createCell(5);
-                salaryCell.setCellValue(emp.getSalary().doubleValue());
-                XSSFCellStyle combined = workbook.createCellStyle();
-                combined.cloneStyleFrom(salaryFormat);
-                combined.setFillForegroundColor(rowStyle.getFillForegroundXSSFColor());
-                combined.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                salaryCell.setCellStyle(combined);
-
-                createCell(row, 6,
-                        emp.getDateOfJoining() != null
-                                ? emp.getDateOfJoining().toString() : "",  rowStyle);
-                createCell(row, 7, emp.getActive(),      rowStyle);
-                createCell(row, 8,
-                        emp.getCreatedAt() != null
-                                ? emp.getCreatedAt().format(DT_FMT) : "",  rowStyle);
-                createCell(row, 9,
-                        emp.getUpdatedAt() != null
-                                ? emp.getUpdatedAt().format(DT_FMT) : "",  rowStyle);
-
-                rowNum++;
-            }
-
-            for (int i = 0; i < HEADERS.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
+            writeSheet(workbook, sheet, employees);
 
             workbook.write(response.getOutputStream());
             response.getOutputStream().flush();
@@ -133,6 +86,84 @@ public class ExcelExportService {
         else if (value instanceof Boolean b)  cell.setCellValue(b);
         else if (value != null)               cell.setCellValue(value.toString());
         cell.setCellStyle(style);
+    }
+
+    public byte[] generateExcel() throws IOException {
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        List<Employee> employees = repo.findAll();
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Employees");
+
+            writeSheet(workbook, sheet, employees);
+
+            workbook.write(out);
+        }
+
+        return out.toByteArray();
+    }
+
+    private void writeSheet(XSSFWorkbook workbook, XSSFSheet sheet, List<Employee> employees) {
+
+        XSSFCellStyle headerStyle  = buildHeaderStyle(workbook);
+        XSSFCellStyle whiteStyle   = buildFillStyle(workbook, IndexedColors.WHITE);
+        XSSFCellStyle blueStyle    = buildFillStyle(workbook, IndexedColors.LIGHT_TURQUOISE);
+        XSSFCellStyle salaryFormat = buildSalaryStyle(workbook);
+
+        // Header row
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < HEADERS.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(HEADERS[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        // Data rows
+        int rowNum = 1;
+        for (Employee emp : employees) {
+
+            Row row = sheet.createRow(rowNum);
+            XSSFCellStyle rowStyle = (rowNum % 2 == 0) ? blueStyle : whiteStyle;
+
+            createCell(row, 0, emp.getId(),         rowStyle);
+            createCell(row, 1, emp.getFirstName(),  rowStyle);
+            createCell(row, 2, emp.getLastName(),   rowStyle);
+            createCell(row, 3, emp.getEmail(),      rowStyle);
+            createCell(row, 4, emp.getDepartment(), rowStyle);
+
+            // Salary (formatted + row color preserved)
+            Cell salaryCell = row.createCell(5);
+            salaryCell.setCellValue(emp.getSalary().doubleValue());
+
+            XSSFCellStyle combined = workbook.createCellStyle();
+            combined.cloneStyleFrom(salaryFormat);
+            combined.setFillForegroundColor(rowStyle.getFillForegroundColor());
+            combined.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            salaryCell.setCellStyle(combined);
+
+            // Date fields
+            createCell(row, 6,
+                    emp.getDateOfJoining() != null
+                            ? emp.getDateOfJoining().toString() : "", rowStyle);
+
+            createCell(row, 7, emp.getActive(), rowStyle);
+
+            createCell(row, 8,
+                    emp.getCreatedAt() != null
+                            ? emp.getCreatedAt().format(DT_FMT) : "", rowStyle);
+
+            createCell(row, 9,
+                    emp.getUpdatedAt() != null
+                            ? emp.getUpdatedAt().format(DT_FMT) : "", rowStyle);
+
+            rowNum++;
+        }
+
+        // Auto-size columns
+        for (int i = 0; i < HEADERS.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
     }
 
 }

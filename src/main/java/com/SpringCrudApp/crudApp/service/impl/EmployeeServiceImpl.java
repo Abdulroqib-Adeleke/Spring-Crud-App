@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -204,9 +205,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public String sendEmail(EmailModel emailDetails){
+    public String sendEmail(EmailModel emailDetails) {
 
-        try{
+        try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
@@ -214,10 +215,24 @@ public class EmployeeServiceImpl implements EmployeeService {
             helper.setTo(emailDetails.getTo());
             helper.setSubject(emailDetails.getSubject());
             helper.setText(emailDetails.getBody(), true);
-            helper.addAttachment(emailDetails.getAttachment()excelExportService.export(HttpServletResponse, String));
-            helper.addAttachment(pdfExportService.export(HttpServletResponse response););
+
+            // Generate files
+            byte[] excelFile = excelExportService.generateExcel();
+            byte[] pdfFile = pdfExportService.generatePdf();
+
+            // Attach files
+            helper.addAttachment(
+                    "employees.xlsx",
+                    new ByteArrayResource(excelFile)
+            );
+
+            helper.addAttachment(
+                    "employees.pdf",
+                    new ByteArrayResource(pdfFile)
+            );
 
             mailSender.send(message);
+
             return "Email sent successfully";
 
         } catch (Exception e) {
