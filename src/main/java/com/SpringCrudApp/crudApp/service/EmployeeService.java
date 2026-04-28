@@ -1,9 +1,6 @@
 package com.SpringCrudApp.crudApp.service;
 
-import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
-import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
-import com.SpringCrudApp.crudApp.dto.ImportResultDto;
-import com.SpringCrudApp.crudApp.dto.EmployeePartialUpdateDto;
+import com.SpringCrudApp.crudApp.dto.*;
 import com.SpringCrudApp.crudApp.model.EmailModel;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -33,5 +30,5 @@ public interface EmployeeService {
 
     ImportResultDto importFromExcel(MultipartFile file);
 
-    String sendEmail(EmailModel emailDetails);
+    void sendEmail(EmailDto dto);
 }

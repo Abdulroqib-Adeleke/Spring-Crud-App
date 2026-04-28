@@ -1,9 +1,6 @@
 package com.SpringCrudApp.crudApp.controller;
 
-import com.SpringCrudApp.crudApp.dto.EmployeePartialUpdateDto;
-import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
-import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
-import com.SpringCrudApp.crudApp.dto.ImportResultDto;
+import com.SpringCrudApp.crudApp.dto.*;
 import com.SpringCrudApp.crudApp.model.EmailModel;
 import com.SpringCrudApp.crudApp.service.EmployeeService;
 import com.SpringCrudApp.crudApp.service.ExcelExportService;
@@ -132,9 +129,10 @@ public class EmployeeController {
 
     @PostMapping("/sendEmail")
     @Operation(summary = "Send Email with attachment")
-    public String sendEmail(@ModelAttribute EmailModel emailModel){
+    public ResponseEntity<String> sendEmail(@RequestBody EmailDto dto){
 
-        return service.sendEmail(emailModel);
+        service.sendEmail(dto);
+        return ResponseEntity.ok("Report emailed successfully");
 
     }
 }

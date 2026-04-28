@@ -88,7 +88,7 @@ public class ExcelExportService {
         cell.setCellStyle(style);
     }
 
-    public byte[] generateExcel() throws IOException {
+    public byte[] generateExcel() {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         List<Employee> employees = repo.findAll();
@@ -99,6 +99,8 @@ public class ExcelExportService {
             writeSheet(workbook, sheet, employees);
 
             workbook.write(out);
+        }catch(Exception e){
+            throw new ExcelProcessingException("Failed to generate excel report" + e.getMessage());
         }
 
         return out.toByteArray();

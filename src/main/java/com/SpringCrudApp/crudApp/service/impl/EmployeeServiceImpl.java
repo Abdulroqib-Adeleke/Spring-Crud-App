@@ -1,13 +1,7 @@
 package com.SpringCrudApp.crudApp.service.impl;
 
-import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
-import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
-import com.SpringCrudApp.crudApp.dto.ImportResultDto;
-import com.SpringCrudApp.crudApp.dto.EmployeePartialUpdateDto;
-import com.SpringCrudApp.crudApp.exception.DuplicateEmailException;
-import com.SpringCrudApp.crudApp.exception.EmployeeNotFoundException;
-import com.SpringCrudApp.crudApp.exception.ExcelProcessingException;
-import com.SpringCrudApp.crudApp.exception.InvalidFileFormatException;
+import com.SpringCrudApp.crudApp.dto.*;
+import com.SpringCrudApp.crudApp.exception.*;
 import com.SpringCrudApp.crudApp.model.EmailModel;
 import com.SpringCrudApp.crudApp.model.Employee;
 import com.SpringCrudApp.crudApp.repository.EmployeeRepository;
@@ -24,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -57,12 +52,15 @@ public class EmployeeServiceImpl implements EmployeeService {
     private static final BigDecimal SALARY_INTERN_FLOOR = new BigDecimal("15000.00");
 
     private final EmployeeRepository repo;
-    //private final Validator validator;
+    private final Validator validator;
 
     private final DataFormatter dataFormatter = new DataFormatter();
     private final JavaMailSender mailSender;
     private final ExcelExportService excelExportService;
     private final PdfExportService pdfExportService;
+
+    @Value("${app.mail.default-from}")
+    private String defaultFromEmail;
 
     @Override
     public EmployeeResponseDto create(@Valid EmployeeRequestDto dto){
@@ -205,39 +203,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public String sendEmail(EmailModel emailDetails) {
+    public void sendEmail(EmailDto dto) {
 
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        byte[] pdf = pdfExportService.generatePdf();
+        byte[] excel = excelExportService.generateExcel();
 
-            helper.setFrom(emailDetails.getFrom());
-            helper.setTo(emailDetails.getTo());
-            helper.setSubject(emailDetails.getSubject());
-            helper.setText(emailDetails.getBody(), true);
+        sendEmployeeReport(dto, pdf, excel);
 
-            // Generate files
-            byte[] excelFile = excelExportService.generateExcel();
-            byte[] pdfFile = pdfExportService.generatePdf();
-
-            // Attach files
-            helper.addAttachment(
-                    "employees.xlsx",
-                    new ByteArrayResource(excelFile)
-            );
-
-            helper.addAttachment(
-                    "employees.pdf",
-                    new ByteArrayResource(pdfFile)
-            );
-
-            mailSender.send(message);
-
-            return "Email sent successfully";
-
-        } catch (Exception e) {
-            return "An error occurred while sending an email: " + e.getMessage();
-        }
     }
 
 
@@ -381,6 +353,38 @@ public class EmployeeServiceImpl implements EmployeeService {
         checkEmail(dto.getEmail(), null);
         validateSalary(dto.getDepartment(), dto.getSalary());
         repo.save(mapToEmployee(dto));
+    }
+
+    public String sendEmployeeReport(EmailDto dto, byte[] pdfByte, byte[] excelByte){
+
+        try{
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message,true);
+
+            String fromEmail = resolveFromEmail(dto.getFrom());
+
+            helper.setFrom(fromEmail);
+            helper.setTo(dto.getTo());
+            helper.setSubject(dto.getSubject());
+            helper.setText(dto.getBody(), true);
+
+            helper.addAttachment("employees.pdf", new ByteArrayResource(pdfByte));
+            helper.addAttachment("employees.xlsx", new ByteArrayResource(excelByte));
+
+            mailSender.send(message);
+
+            return "Email sent successfully";
+
+        }catch(Exception e){
+            throw new RuntimeException("Failed to send email: " + e.getMessage());
+        }
+    }
+
+    private String resolveFromEmail(String fromEmail){
+        if(fromEmail == null ||fromEmail.trim().isEmpty()){
+            return defaultFromEmail;
+        }
+        return defaultFromEmail;
     }
 
 }

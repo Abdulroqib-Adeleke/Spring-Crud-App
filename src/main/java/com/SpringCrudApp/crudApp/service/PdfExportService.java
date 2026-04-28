@@ -196,8 +196,8 @@ public class PdfExportService {
 
             return out.toByteArray();
 
-        } catch (Exception ex) {
-            throw new ExcelProcessingException("Failed to generate PDF report", ex);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate PDF report: " + e.getMessage());
         }
     }
 }
