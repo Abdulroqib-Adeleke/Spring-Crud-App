@@ -105,7 +105,7 @@ public class PdfExportService {
             Font font = isActive ? dataFont : inactiveFont;
 
             String fullName = emp.getFirstName() + " " + emp.getLastName();
-            String salary   = String.format("$ %,.2f", emp.getSalary());
+            String salary   = String.format("₦ %,.2f", emp.getSalary());
             String doj      = emp.getDateOfJoining() != null
                     ? emp.getDateOfJoining().toString() : "-";
             String status   = isActive ? "Active" : "Inactive";

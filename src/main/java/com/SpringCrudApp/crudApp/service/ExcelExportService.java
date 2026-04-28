@@ -113,7 +113,7 @@ public class ExcelExportService {
         XSSFCellStyle blueStyle    = buildFillStyle(workbook, IndexedColors.LIGHT_TURQUOISE);
         XSSFCellStyle salaryFormat = buildSalaryStyle(workbook);
 
-        // Header row
+
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < HEADERS.length; i++) {
             Cell cell = headerRow.createCell(i);
@@ -121,7 +121,7 @@ public class ExcelExportService {
             cell.setCellStyle(headerStyle);
         }
 
-        // Data rows
+
         int rowNum = 1;
         for (Employee emp : employees) {
 
@@ -134,7 +134,7 @@ public class ExcelExportService {
             createCell(row, 3, emp.getEmail(),      rowStyle);
             createCell(row, 4, emp.getDepartment(), rowStyle);
 
-            // Salary (formatted + row color preserved)
+
             Cell salaryCell = row.createCell(5);
             salaryCell.setCellValue(emp.getSalary().doubleValue());
 
@@ -144,7 +144,7 @@ public class ExcelExportService {
             combined.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             salaryCell.setCellStyle(combined);
 
-            // Date fields
+
             createCell(row, 6,
                     emp.getDateOfJoining() != null
                             ? emp.getDateOfJoining().toString() : "", rowStyle);
@@ -162,7 +162,7 @@ public class ExcelExportService {
             rowNum++;
         }
 
-        // Auto-size columns
+
         for (int i = 0; i < HEADERS.length; i++) {
             sheet.autoSizeColumn(i);
         }
