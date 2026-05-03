@@ -2,6 +2,7 @@ package com.SpringCrudApp.crudApp.service.impl;
 
 import com.SpringCrudApp.crudApp.dto.*;
 import com.SpringCrudApp.crudApp.exception.*;
+import com.SpringCrudApp.crudApp.mapper.EmployeeMapper;
 import com.SpringCrudApp.crudApp.model.Employee;
 import com.SpringCrudApp.crudApp.repository.EmployeeRepository;
 import com.SpringCrudApp.crudApp.service.EmployeeService;
@@ -50,6 +51,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository repo;
     private final Validator validator;
+    private final EmployeeMapper mapper;
 
     private final DataFormatter dataFormatter = new DataFormatter();
     private final JavaMailSender mailSender;
@@ -63,9 +65,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeResponseDto create(@Valid EmployeeRequestDto dto){
         checkEmail(dto.getEmail(), null);
         validateSalary(dto.getDepartment(), dto.getSalary());
-        Employee saved = repo.save(mapToEmployee(dto));
+        Employee saved = repo.save(mapper.mapToEmployee(dto));
 
-        return mapToDto(saved);
+        return mapper.mapToDto(saved);
 
     }
 
@@ -240,34 +242,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
     }
 
-    private Employee mapToEmployee(EmployeeRequestDto dto) {
-        return Employee.builder()
-                .firstName(dto.getFirstName())
-                .lastName(dto.getLastName())
-                .email(dto.getEmail())
-                .department(dto.getDepartment())
-                .salary(dto.getSalary())
-                .active(dto.getActive() != null ? dto.getActive() : true)
-                .dateOfJoining(LocalDate.now())
-                .createdAt(LocalDateTime.now())
-                .build();
-    }
-
-    public EmployeeResponseDto mapToDto(Employee e) {
-        return EmployeeResponseDto.builder()
-                .id(e.getId())
-                .firstName(e.getFirstName())
-                .lastName(e.getLastName())
-                .email(e.getEmail())
-                .department(e.getDepartment())
-                .salary(e.getSalary())
-                .dateOfJoining(e.getDateOfJoining())
-                .active(e.getActive())
-                .createdAt(e.getCreatedAt())
-                .updatedAt(e.getUpdatedAt())
-                .build();
-    }
-
     private Employee fetchId(Long id){
         return repo.findById(id)
                 .orElseThrow(() -> new EmployeeNotFoundException(id));
@@ -313,8 +287,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 } else {
 
                     String dateStr = dataFormatter.formatCellValue(dateCell).trim();
-
-
 
                     try {
 

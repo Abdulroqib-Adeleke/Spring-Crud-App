@@ -1,7 +1,6 @@
 package com.SpringCrudApp.crudApp.service;
 
 import com.SpringCrudApp.crudApp.dto.*;
-import com.SpringCrudApp.crudApp.model.EmailModel;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
