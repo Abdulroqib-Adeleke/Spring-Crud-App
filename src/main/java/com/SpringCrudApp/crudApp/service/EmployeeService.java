@@ -1,6 +1,10 @@
 package com.SpringCrudApp.crudApp.service;
 
-import com.SpringCrudApp.crudApp.dto.*;
+import com.SpringCrudApp.crudApp.dto.requestDto.EmailDto;
+import com.SpringCrudApp.crudApp.dto.requestDto.EmployeePartialUpdateDto;
+import com.SpringCrudApp.crudApp.dto.requestDto.EmployeeRequestDto;
+import com.SpringCrudApp.crudApp.dto.responseDto.EmployeeResponseDto;
+import com.SpringCrudApp.crudApp.dto.responseDto.ImportResultDto;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

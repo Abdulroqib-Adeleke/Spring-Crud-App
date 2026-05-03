@@ -1,4 +1,4 @@
-package com.SpringCrudApp.crudApp.dto;
+package com.SpringCrudApp.crudApp.dto.requestDto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;

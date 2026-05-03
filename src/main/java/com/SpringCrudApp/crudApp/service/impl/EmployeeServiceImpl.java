@@ -1,6 +1,10 @@
 package com.SpringCrudApp.crudApp.service.impl;
 
-import com.SpringCrudApp.crudApp.dto.*;
+import com.SpringCrudApp.crudApp.dto.requestDto.EmailDto;
+import com.SpringCrudApp.crudApp.dto.requestDto.EmployeePartialUpdateDto;
+import com.SpringCrudApp.crudApp.dto.requestDto.EmployeeRequestDto;
+import com.SpringCrudApp.crudApp.dto.responseDto.EmployeeResponseDto;
+import com.SpringCrudApp.crudApp.dto.responseDto.ImportResultDto;
 import com.SpringCrudApp.crudApp.exception.*;
 import com.SpringCrudApp.crudApp.mapper.EmployeeMapper;
 import com.SpringCrudApp.crudApp.model.Employee;
@@ -11,7 +15,6 @@ import com.SpringCrudApp.crudApp.service.PdfExportService;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -29,10 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,10 +50,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     private static final BigDecimal SALARY_INTERN_FLOOR = new BigDecimal("15000.00");
 
     private final EmployeeRepository repo;
-    private final Validator validator;
     private final EmployeeMapper mapper = new EmployeeMapper();
 
-    private final DataFormatter dataFormatter = new DataFormatter();
     private final JavaMailSender mailSender;
     private final ExcelExportService excelExportService;
     private final PdfExportService pdfExportService;
@@ -182,7 +180,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
                 List<String> rowErrors = new ArrayList<>();
 
-                EmployeeRequestDto dto = mapRowToDto(row, rowErrors);
+                EmployeeRequestDto dto = mapper.mapRowToDto(row, rowErrors);
 
                 if (rowErrors.isEmpty()) {
 
@@ -235,7 +233,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 ? SALARY_INTERN_FLOOR
                 : SALARY_DEFAULT_FLOOR;
 
-        assert salary != null;
         if(salary.compareTo(floorSalary) < 0){
             throw new IllegalArgumentException(
                     "Minimum salary for department " + department + " is " + floorSalary);
@@ -256,80 +253,6 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new InvalidFileFormatException(
                     "Only .xlsx files are supported. Received: " + name);
         }
-    }
-
-    private EmployeeRequestDto mapRowToDto(Row row, List<String> rowErrors) {
-        EmployeeRequestDto dto = new EmployeeRequestDto();
-        int rowNum = row.getRowNum() + 1;
-
-        dto.setFirstName(dataFormatter.formatCellValue(row.getCell(0)).trim());
-        dto.setLastName(dataFormatter.formatCellValue(row.getCell(1)).trim());
-        dto.setEmail(dataFormatter.formatCellValue(row.getCell(2)).trim());
-        dto.setDepartment(dataFormatter.formatCellValue(row.getCell(3)).trim());
-
-        try {
-            String salaryStr = dataFormatter.formatCellValue(row.getCell(4)).trim();
-            dto.setSalary(salaryStr.isBlank() ? BigDecimal.ZERO : new BigDecimal(salaryStr));
-        } catch (NumberFormatException e) {
-            rowErrors.add("Row " + rowNum + ": Invalid salary format");
-        }
-
-        // Date - Column F (Index 5)
-        Cell dateCell = row.getCell(5);
-        if (dateCell != null) {
-
-            try {
-
-                if (DateUtil.isCellDateFormatted(dateCell)) {
-
-                    dto.setDateOfJoining(dateCell.getLocalDateTimeCellValue().toLocalDate());
-
-                } else {
-
-                    String dateStr = dataFormatter.formatCellValue(dateCell).trim();
-
-                    try {
-
-                        dto.setDateOfJoining(LocalDate.parse(dateStr));
-
-                    } catch (DateTimeParseException e) {
-
-
-
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
-
-                        dto.setDateOfJoining(LocalDate.parse(dateStr, formatter));
-
-                    }
-
-                }
-
-            } catch (Exception e) {
-
-                rowErrors.add("Row " + rowNum + ": Invalid date format '" +
-
-                        dataFormatter.formatCellValue(dateCell) + "'. Expected YYYY-MM-DD");
-
-            }
-
-        }
-
-        // Active - Column G (Index 6)
-        String activeStr = dataFormatter.formatCellValue(row.getCell(6)).trim();
-        dto.setActive(activeStr.isBlank() || Boolean.parseBoolean(activeStr));
-
-        return dto;
-    }
-
-    private String getCellString(Row row, int col) {
-        Cell cell = row.getCell(col);
-        if (cell == null) return "";
-        return switch (cell.getCellType()) {
-            case STRING  -> cell.getStringCellValue().trim();
-            case NUMERIC -> String.valueOf((long) cell.getNumericCellValue());
-            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
-            default      -> "";
-        };
     }
 
     @Transactional

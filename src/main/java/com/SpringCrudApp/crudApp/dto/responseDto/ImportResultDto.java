@@ -1,4 +1,4 @@
-package com.SpringCrudApp.crudApp.dto;
+package com.SpringCrudApp.crudApp.dto.responseDto;
 
 import lombok.*;
 
