@@ -3,11 +3,12 @@ package com.SpringCrudApp.crudApp.mapper;
 import com.SpringCrudApp.crudApp.dto.EmployeeRequestDto;
 import com.SpringCrudApp.crudApp.dto.EmployeeResponseDto;
 import com.SpringCrudApp.crudApp.model.Employee;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-
+@NoArgsConstructor
 public class EmployeeMapper {
 
     public Employee mapToEmployee(EmployeeRequestDto dto) {

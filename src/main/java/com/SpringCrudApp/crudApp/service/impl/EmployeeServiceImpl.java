@@ -51,7 +51,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository repo;
     private final Validator validator;
-    private final EmployeeMapper mapper;
+    private final EmployeeMapper mapper = new EmployeeMapper();
 
     private final DataFormatter dataFormatter = new DataFormatter();
     private final JavaMailSender mailSender;
@@ -78,7 +78,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Page<Employee> employeePage = repo.findAll(pageable);
         List<EmployeeResponseDto> dtoResponse = employeePage.stream()
-                .map(this::mapToDto)
+                .map(mapper::mapToDto)
                 .toList();
 
         return new PageImpl<>(dtoResponse, pageable, employeePage.getTotalElements());
@@ -88,7 +88,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeResponseDto findById(Long id) {
 
-        return mapToDto(fetchId(id));
+        return mapper.mapToDto(fetchId(id));
     }
 
     @Override
@@ -106,7 +106,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         exists.setActive(dto.getActive());
         exists.setUpdatedAt(LocalDateTime.now());
 
-        return mapToDto(repo.save(exists));
+        return mapper.mapToDto(repo.save(exists));
 
     }
 
@@ -133,7 +133,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         exists.setUpdatedAt(LocalDateTime.now());
 
-        return mapToDto(repo.save(exists));
+        return mapper.mapToDto(repo.save(exists));
     }
 
     @Override
@@ -163,7 +163,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         return repo.findBySalaryRange(min, max)
                 .stream()
-                .map(this::mapToDto)
+                .map(mapper::mapToDto)
                 .collect(Collectors.toList());
     }
 
@@ -337,7 +337,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         checkEmail(dto.getEmail(), null);
         validateSalary(dto.getDepartment(), dto.getSalary());
-        repo.save(mapToEmployee(dto));
+        repo.save(mapper.mapToEmployee(dto));
     }
 
     public void sendEmployeeReport(EmailDto dto, byte[] pdfByte, byte[] excelByte){
